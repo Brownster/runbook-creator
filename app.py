@@ -71,7 +71,7 @@ def upload_file():
             file.save(file_path)
             try:
                 generated_filenames = create_runbook_file(file_path, filename)
-                # Here you might want to handle or display multiple files
+                # Redirect to the download page for the first generated file
                 return redirect(url_for('download_file', filename=generated_filenames[0]))
             except ValueError as e:
                 return str(e), 400
@@ -79,7 +79,10 @@ def upload_file():
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
-    return send_from_directory(path=UPLOAD_FOLDER, filename=f"{filename}.docx", as_attachment=True)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename=f"{filename}", as_attachment=True)
+    except Exception as e:
+        return str(e), 500
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup():
