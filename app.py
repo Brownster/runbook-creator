@@ -79,7 +79,11 @@ def upload_file():
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename=f"{filename}", as_attachment=True)
+    try:
+        # Correct usage without keyword arguments
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except Exception as e:
+        return str(e), 500
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup():
