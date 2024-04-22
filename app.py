@@ -10,12 +10,12 @@ app = Flask(__name__)
 UPLOAD_FOLDER = tempfile.mkdtemp()
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-def create_runbook_file(yaml_content, filename):
-    yaml_content.seek(0)
-    data = yaml.safe_load(yaml_content)
+def create_runbook_file(file_stream, filename):
+    file_stream.seek(0)  # Ensure the stream is at the start
+    data = yaml.safe_load(file_stream)
     if data is None or 'groups' not in data:
         raise ValueError("Invalid or empty YAML content")
-
+    
     for group in data['groups']:
         for rule in group['rules']:
             alert_name = rule['alert']
@@ -27,23 +27,17 @@ def create_runbook_file(yaml_content, filename):
             doc_path = os.path.join(app.config['UPLOAD_FOLDER'], doc_filename)
             doc = Document()
 
-            doc.add_heading(f"SM3 Alert RunBook – {group['name']} – {alert_name}", level=1).font.size = Pt(14)
-            doc.add_heading('Alert Name:', level=2).font.size = Pt(12)
-            doc.add_paragraph(alert_name)
-            doc.add_heading('Alert Expression:', level=2).font.size = Pt(12)
-            doc.add_paragraph(expr)
-            doc.add_heading('Category:', level=2).font.size = Pt(12)
-            doc.add_paragraph(group['name'])
-            doc.add_heading('Description:', level=2).font.size = Pt(12)
-            doc.add_paragraph(description)
-            doc.add_heading('Possible Cause(s):', level=2).font.size = Pt(12)
-            doc.add_heading('Impact:', level=2).font.size = Pt(12)
-            doc.add_heading('Next Steps:', level=2).font.size = Pt(12)
-            doc.add_heading('Extra notes:', level=2).font.size = Pt(12)
-            severity_paragraph = doc.add_paragraph()
-            run = severity_paragraph.add_run(f"Severity level is {severity}, as it may not immediately impact service but requires corrective action.")
-            run.font.size = Pt(10)
+            # Correctly setting the font size using a helper function
+            para = doc.add_paragraph()
+            run = para.add_run(f"SM3 Alert RunBook – {group['name']} – {alert_name}")
+            run.font.size = Pt(14)
+
+            para = doc.add_paragraph('Alert Name:', style='Heading 2')
+            run = para.add_run(alert_name)
+            run.font.size = Pt(12)
+
             doc.save(doc_path)
+
     return filename
 
 @app.route('/', methods=['GET', 'POST'])
