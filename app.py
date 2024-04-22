@@ -37,19 +37,19 @@ def create_runbook_file(file_path, filename):
             para = doc.add_paragraph()
             add_run_with_font(para, f"SM3 Alert RunBook – {group['name']} – {alert_name}", 14)
 
-            para = doc.add_paragraph('Alert Name: ', style='Heading 2')
+            para = doc.add_paragraph('Alert Name: ', style='Normal')
             add_run_with_font(para, alert_name, 12)
 
-            para = doc.add_paragraph('Alert Expression: ', style='Heading 2')
+            para = doc.add_paragraph('Alert Expression: ', style='Normal')
             add_run_with_font(para, expr, 12)
 
-            para = doc.add_paragraph('Category: ', style='Heading 2')
+            para = doc.add_paragraph('Category: ', style='Normal')
             add_run_with_font(para, group['name'], 12)
 
-            para = doc.add_paragraph('Description: ', style='Heading 2')
+            para = doc.add_paragraph('Description: ', style='Normal')
             add_run_with_font(para, description, 12)
 
-            para = doc.add_paragraph('Severity: ', style='Heading 2')
+            para = doc.add_paragraph('Notes: ', style='Normal')
             add_run_with_font(para, severity, 12)
 
             doc.save(doc_path)
