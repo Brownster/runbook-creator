@@ -23,7 +23,8 @@ def create_runbook_file(yaml_content, filename):
             doc_path = os.path.join(app.config['UPLOAD_FOLDER'], doc_filename)
             doc = Document()
 
-            doc.add_heading(f'SM3 Alert RunBook – {group['name']} – {alert_name}', level=1).font.size = Pt(14)
+            # Corrected f-string for heading
+            doc.add_heading(f"SM3 Alert RunBook – {group['name']} – {alert_name}", level=1).font.size = Pt(14)
             doc.add_heading('Alert Name:', level=2).font.size = Pt(12)
             doc.add_paragraph(alert_name)
             doc.add_heading('Alert Expression:', level=2).font.size = Pt(12)
@@ -37,7 +38,7 @@ def create_runbook_file(yaml_content, filename):
             doc.add_heading('Next Steps:', level=2).font.size = Pt(12)
             doc.add_heading('Extra notes:', level=2).font.size = Pt(12)
             severity_paragraph = doc.add_paragraph()
-            run = severity_paragraph.add_run(f'Severity level is {severity}, as it may not immediately impact service but requires corrective action.')
+            run = severity_paragraph.add_run(f"Severity level is {severity}, as it may not immediately impact service but requires corrective action.")
             run.font.size = Pt(10)
             doc.save(doc_path)
     return filename
