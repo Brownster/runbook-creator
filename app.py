@@ -7,7 +7,7 @@ import tempfile
 import shutil
 
 app = Flask(__name__)
-UPLOAD_FOLDER = tempfile.mkdtemp()
+UPLOAD_FOLDER = tempfile.mkdtemp()  # Uses temporary directory for file uploads and generated docs
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def add_run_with_font(paragraph, text, size):
@@ -79,10 +79,7 @@ def upload_file():
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
-    try:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename=f"{filename}", as_attachment=True)
-    except Exception as e:
-        return str(e), 500
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename=f"{filename}", as_attachment=True)
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup():
