@@ -11,7 +11,11 @@ UPLOAD_FOLDER = tempfile.mkdtemp()
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def create_runbook_file(yaml_content, filename):
+    yaml_content.seek(0)
     data = yaml.safe_load(yaml_content)
+    if data is None or 'groups' not in data:
+        raise ValueError("Invalid or empty YAML content")
+
     for group in data['groups']:
         for rule in group['rules']:
             alert_name = rule['alert']
@@ -23,7 +27,6 @@ def create_runbook_file(yaml_content, filename):
             doc_path = os.path.join(app.config['UPLOAD_FOLDER'], doc_filename)
             doc = Document()
 
-            # Corrected f-string for heading
             doc.add_heading(f"SM3 Alert RunBook – {group['name']} – {alert_name}", level=1).font.size = Pt(14)
             doc.add_heading('Alert Name:', level=2).font.size = Pt(12)
             doc.add_paragraph(alert_name)
@@ -55,8 +58,11 @@ def upload_file():
             filename = file.filename
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(save_path)
-            runbook_basename = create_runbook_file(file.stream, filename)
-            return redirect(url_for('download_file', filename=runbook_basename))
+            try:
+                runbook_basename = create_runbook_file(file.stream, filename)
+                return redirect(url_for('download_file', filename=runbook_basename))
+            except ValueError as e:
+                return str(e), 400
     return render_template('upload.html')
 
 @app.route('/downloads/<filename>')
