@@ -7,7 +7,7 @@ import tempfile
 import shutil
 
 app = Flask(__name__)
-UPLOAD_FOLDER = tempfile.mkdtemp()
+UPLOAD_FOLDER = tempfile.mkdtemp()  # Uses temporary directory for file uploads and generated docs
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def add_heading(doc, text, size, level):
@@ -16,15 +16,13 @@ def add_heading(doc, text, size, level):
     run.font.size = Pt(size)
     return heading
 
-def add_paragraph(doc, title, content, title_size, content_size):
-    title_para = doc.add_paragraph()
-    title_run = title_para.add_run(title)
-    title_run.font.size = Pt(title_size)
-    
-    content_para = doc.add_paragraph(content)
-    content_run = content_para.add_run()  # Creates a new run for content
-    content_run.font.size = Pt(content_size)
-    return content_para
+def add_paragraph(doc, title, content, font_size):
+    paragraph = doc.add_paragraph()
+    run = paragraph.add_run(title + " ")  # Add space after title for clarity
+    run.font.size = Pt(font_size)
+    content_run = paragraph.add_run(content)
+    content_run.font.size = Pt(font_size)
+    return paragraph
 
 def create_runbook_file(file_path, original_filename):
     with open(file_path, 'r') as file:
@@ -35,29 +33,20 @@ def create_runbook_file(file_path, original_filename):
     
     generated_filenames = []
     for group in data['groups']:
-        # Initialize a new Word document for each group
         doc = Document()
         doc_filename = f"{original_filename}_{group['name'].replace(' ', '_')}.docx"
         doc_path = os.path.join(UPLOAD_FOLDER, doc_filename)
         
-        # Add a title page or a section header for the group
-        doc.add_heading(f"RunBook for {group['name']}", level=1)
+        add_heading(doc, f"RunBook for {group['name']}", 14, level=1)
 
         for rule in group['rules']:
-            alert_name = rule['alert']
-            expr = rule['expr']
-            description = rule['annotations']['description']
-            severity = rule['labels']['severity']
+            add_heading(doc, f"Alert: {rule['alert']}", 12, level=2)
+            add_paragraph(doc, "Alert Expression:", rule['expr'], 11)
+            add_paragraph(doc, "Category:", group['name'], 11)
+            add_paragraph(doc, "Description:", rule['annotations']['description'], 11)
+            add_paragraph(doc, "Notes:", rule['labels']['severity'], 11)
+            doc.add_paragraph()  # Add a space between sections for clarity
 
-            # Add each alert as a new section in the document
-            doc.add_heading(f"Alert: {alert_name}", level=2)
-            doc.add_paragraph('Alert Expression:').add_run(expr).font.size = Pt(12)
-            doc.add_paragraph('Category:').add_run(group['name']).font.size = Pt(12)
-            doc.add_paragraph('Description:').add_run(description).font.size = Pt(12)
-            doc.add_paragraph('Notes:').add_run(severity).font.size = Pt(12)
-            doc.add_paragraph()
-
-        # Save the document after all alerts have been added
         doc.save(doc_path)
         generated_filenames.append(doc_filename)
     
@@ -66,29 +55,20 @@ def create_runbook_file(file_path, original_filename):
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        if 'file' not in request.files:
-            return redirect(request.url)
-        file = request.files['file']
-        if file.filename == '':
-            return redirect(request.url)
-        if file:
+        file = request.files.get('file')
+        if file and file.filename:
             filename = file.filename
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             file.save(file_path)
-            try:
-                generated_filenames = create_runbook_file(file_path, filename)
-                return redirect(url_for('download_file', filename=generated_filenames[0]))
-            except ValueError as e:
-                return str(e), 400
+            generated_filenames = create_runbook_file(file_path, filename)
+            return redirect(url_for('download_file', filename=generated_filenames[0]))
+        else:
+            return "No file selected", 400
     return render_template('upload.html')
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
-    try:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
-    except Exception as e:
-        return str(e), 500
-
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup():
