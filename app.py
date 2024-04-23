@@ -15,10 +15,10 @@ def add_run_with_font(paragraph, text, size):
     run.font.size = Pt(size)
     return run
 
-def create_runbook_file(file_path, filename):
+def create_runbook_file(file_path, original_filename):
     with open(file_path, 'r') as file:
         data = yaml.safe_load(file)
-    
+
     if data is None or 'groups' not in data:
         raise ValueError("Invalid or empty YAML content")
     
@@ -29,28 +29,27 @@ def create_runbook_file(file_path, filename):
             expr = rule['expr']
             description = rule['annotations']['description']
             severity = rule['labels']['severity']
-            
-            doc_filename = f"{filename}_{alert_name.replace(' ', '_')}.docx"
+
+            # Generate a filename based on the alert name to avoid overwriting files
+            doc_filename = f"{original_filename}_{alert_name.replace(' ', '_')}.docx"
             doc_path = os.path.join(UPLOAD_FOLDER, doc_filename)
             doc = Document()
 
-            para = doc.add_paragraph()
-            add_run_with_font(para, f"SM3 Alert RunBook – {group['name']} – {alert_name}", 14)
+            doc.add_heading(f"SM3 Alert RunBook – {group['name']} – {alert_name}", level=1).font.size = Pt(14)
+            doc.add_heading('Alert Name:', level=2).font.size = Pt(12)
+            doc.add_paragraph(alert_name)
 
-            para = doc.add_paragraph('Alert Name: ', style='Normal')
-            add_run_with_font(para, alert_name, 12)
+            doc.add_heading('Alert Expression:', level=2).font.size = Pt(12)
+            doc.add_paragraph(expr)
 
-            para = doc.add_paragraph('Alert Expression: ', style='Normal')
-            add_run_with_font(para, expr, 12)
+            doc.add_heading('Category:', level=2).font.size = Pt(12)
+            doc.add_paragraph(group['name'])
 
-            para = doc.add_paragraph('Category: ', style='Normal')
-            add_run_with_font(para, group['name'], 12)
+            doc.add_heading('Description:', level=2).font.size = Pt(12)
+            doc.add_paragraph(description)
 
-            para = doc.add_paragraph('Description: ', style='Normal')
-            add_run_with_font(para, description, 12)
-
-            para = doc.add_paragraph('Notes: ', style='Normal')
-            add_run_with_font(para, severity, 12)
+            doc.add_heading('Notes:', level=2).font.size = Pt(12)
+            doc.add_paragraph(severity)
 
             doc.save(doc_path)
             generated_filenames.append(doc_filename)
