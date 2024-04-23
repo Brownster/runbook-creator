@@ -44,6 +44,12 @@ def create_runbook_file(file_path, original_filename):
             add_paragraph(doc, "Alert Expression:", rule['expr'], 11)
             add_paragraph(doc, "Category:", group['name'], 11)
             add_paragraph(doc, "Description:", rule['annotations']['description'], 11)
+            
+            # Adding new labels with placeholder content
+            add_paragraph(doc, "Possible Causes:", "Specify possible causes here.", 11)
+            add_paragraph(doc, "Impact:", "Specify impact details here.", 11)
+            add_paragraph(doc, "Next Steps:", "Specify next steps here.", 11)
+            
             add_paragraph(doc, "Notes:", rule['labels']['severity'], 11)
             doc.add_paragraph()  # Add a space between sections for clarity
 
