@@ -29,31 +29,37 @@ def add_paragraph(doc, title, content, title_size, content_size):
 def create_runbook_file(file_path, original_filename):
     with open(file_path, 'r') as file:
         data = yaml.safe_load(file)
-    
+
     if data is None or 'groups' not in data:
         raise ValueError("Invalid or empty YAML content")
     
     generated_filenames = []
     for group in data['groups']:
+        # Initialize a new Word document for each group
+        doc = Document()
+        doc_filename = f"{original_filename}_{group['name'].replace(' ', '_')}.docx"
+        doc_path = os.path.join(UPLOAD_FOLDER, doc_filename)
+        
+        # Add a title page or a section header for the group
+        doc.add_heading(f"RunBook for {group['name']}", level=1)
+
         for rule in group['rules']:
             alert_name = rule['alert']
             expr = rule['expr']
             description = rule['annotations']['description']
             severity = rule['labels']['severity']
 
-            doc_filename = f"{original_filename}_{alert_name.replace(' ', '_')}.docx"
-            doc_path = os.path.join(UPLOAD_FOLDER, doc_filename)
-            doc = Document()
+            # Add each alert as a new section in the document
+            doc.add_heading(f"Alert: {alert_name}", level=2)
+            doc.add_paragraph('Alert Expression:').add_run(expr).font.size = Pt(12)
+            doc.add_paragraph('Category:').add_run(group['name']).font.size = Pt(12)
+            doc.add_paragraph('Description:').add_run(description).font.size = Pt(12)
+            doc.add_paragraph('Notes:').add_run(severity).font.size = Pt(12)
+            doc.add_paragraph()
 
-            add_heading(doc, f"SM3 Alert RunBook – {group['name']} – {alert_name}", 14, 1)
-            add_paragraph(doc, 'Alert Name: ', alert_name, 12, 12)
-            add_paragraph(doc, 'Alert Expression: ', expr, 12, 12)
-            add_paragraph(doc, 'Category: ', group['name'], 12, 12)
-            add_paragraph(doc, 'Description: ', description, 12, 12)
-            add_paragraph(doc, 'Severity: ', severity, 12, 12)
-
-            doc.save(doc_path)
-            generated_filenames.append(doc_filename)
+        # Save the document after all alerts have been added
+        doc.save(doc_path)
+        generated_filenames.append(doc_filename)
     
     return generated_filenames
 
@@ -78,7 +84,11 @@ def upload_file():
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    except Exception as e:
+        return str(e), 500
+
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup():
